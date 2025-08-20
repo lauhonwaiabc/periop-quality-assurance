@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>NTWC A&OT Perioperative Quality Assurance</title>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<h1>NTWC A&OT Perioperative Quality Assurance</h1>
+<!-- Step 1 -->
+<section id="step1">
+    <label for="hnInput">HN Number:</label>
+    <input type="text" id="hnInput" placeholder="Enter HN number e.g. HN12345678" autofocus/>
+    <button id="checkDbBtn">Check Database</button>
+    <div id="step1Msg" class="error"></div>
+</section>
+<!-- Step 2 -->
+<section id="step2" class="hidden">
+    <label for="caseNoInput">Case Number:</label>
+    <input type="text" id="caseNoInput" disabled/>
+    <button id="retrieveCaseBtn" disabled>Retrieve Case</button>
+    <button id="addCaseBtn" disabled>Add New Case</button>
+    <div id="step2Msg" class="error"></div>
+</section>
+<!-- Step 3 -->
+<section id="step3" class="hidden">
+    <h3>Case Content</h3>
+    <h5>To support the monitoring and enhancement of perioperative care quality, please tick the appropriate box(es) if
+        any of the following adverse events have occurred.</h5>
+    <form id="caseForm">
+        <!-- Section 1: Patient Information -->
+        <fieldset>
+            <legend>Section 1: Patient Information</legend>
+
+            <label for="hnDisplay">HN Number (locked):</label>
+            <input type="text" id="hnDisplay" disabled/>
+
+            <label for="dateOT">Date of OT:</label>
+            <input type="date" id="dateOT"/>
+
+            <label for="location">Location:</label>
+            <select id="location">
+                <option value="">-- Select Location --</option>
+                <option value="TMH">TMH</option>
+                <option value="POH">POH</option>
+                <option value="TSWH">TSWH</option>
+            </select>
+
+            <label for="floor">Floor:</label>
+            <select id="floor" disabled>
+                <option value="">-- Select Floor --</option>
+            </select>
+
+            <label for="ot">OT:</label>
+            <select id="ot" disabled>
+                <option value="">-- Select OT --</option>
+            </select>
+
+            <label for="caseSeq">Case sequence (Number):</label>
+            <input type="number" id="caseSeq" min="0"/>
+
+            <label for="bookingType">Booking Type:</label>
+            <select id="bookingType">
+                <option value="">-- Select --</option>
+                <option value="Elective">Elective</option>
+                <option value="Emergency">Emergency</option>
+            </select>
+
+            <label for="surgSpeciality">Surgical Specialities:</label>
+            <select id="surgSpeciality">
+                <option value="">-- Select Speciality --</option>
+                <option>GEN</option>
+                <option>URO</option>
+                <option>TS</option>
+                <option>PLAS</option>
+                <option>VAS</option>
+                <option>BRE</option>
+                <option>O&T</option>
+                <option>NEU</option>
+                <option>EYE</option>
+                <option>ENT</option>
+                <option>DEN</option>
+                <option>GYN</option>
+                <option>OBS</option>
+                <option>Remote</option>
+            </select>
+
+            <label>Sign/Unsign:</label>
+            <button type="button" id="signPatientBtn">Sign</button>
+            <button type="button" id="unsignPatientBtn" disabled>Unsign</button>
+        </fieldset>
+
+        <!-- Section 2: To be completed by Anaes -->
+        <fieldset>
+            <legend>Section 2: To be completed by Anaesthetist</legend>
+
+            <label for="asaClass">ASA Class:</label>
+            <select id="asaClass">
+                <option value="">-- Select ASA Class --</option>
+                <option>I</option>
+                <option>II</option>
+                <option>III</option>
+                <option>IV</option>
+                <option>V</option>
+            </select>
+
+            <div>
+                <label><input type="checkbox" id="ia_cardiac_arrest"/> Intraoperative cardiac arrest</label><br/>
+                <label><input type="checkbox" id="med_incident"/> Medication incident</label><br/>
+                <label><input type="checkbox" id="dental_injury"/> Dental injury</label><br/>
+                <label><input type="checkbox" id="severe_regurgitation"/> Severe regurgitation and
+                    aspiration</label><br/>
+                <label><input type="checkbox" id="unanticipated_airway"/> Unaticipated artificial airway
+                    establishment</label><br/>
+                <label><input type="checkbox" id="dural_puncture"/> Inadvertent dural puncture</label><br/>
+                <label><input type="checkbox" id="general_anaesthesia"/> Unaticipated conversion to general anaesthesia</label><br/>
+                <label><input type="checkbox" id="postop_reintubation"/> Postoperative re-intubation</label><br/>
+                <label><input type="checkbox" id="none_anaes"/> None of above adverse event</label><br/>
+            </div>
+
+            <label for="anaesName">Name of Anaesthetist:</label>
+            <input type="text" id="anaesName"/>
+
+            <label>Sign/Unsign:</label>
+            <button type="button" id="signAnaesBtn">Sign</button>
+            <button type="button" id="unsignAnaesBtn" disabled>Unsign</button>
+        </fieldset>
+
+        <!-- Section 3: To be completed by PACU nurse -->
+        <fieldset>
+            <legend>Section 3: To be completed by PACU nurse</legend>
+
+            <div>
+                <label><input type="checkbox" id="hypothermia"/> Hypothermia upon PACU admission</label><br/>
+                <label><input type="checkbox" id="delayed_discharge"/> Delayed discharge from PACU &gt; 2 hours</label>
+                <div id="delayed_causes" style="margin-left:20px; display:none;">
+                    <label><input type="checkbox" id="delay_medical"/> Medical instability</label><br/>
+                    <label><input type="checkbox" id="delay_anaesthetist"/> Delayed discharge by
+                        anaesthetist</label><br/>
+                    <label><input type="checkbox" id="delay_ward"/> Delayed attendance by ward</label><br/>
+                    <label><input type="checkbox" id="delay_icu"/> Delayed attendance by ICU</label><br/>
+                </div>
+                <br>
+                <label><input type="checkbox" id="none_pacu"/> None of above adverse event</label><br/>
+            </div>
+
+            <label for="nurseName">Name of Nurse:</label>
+            <input type="text" id="nurseName"/>
+
+            <label>Sign/Unsign:</label>
+            <button type="button" id="signNurseBtn">Sign</button>
+            <button type="button" id="unsignNurseBtn" disabled>Unsign</button>
+        </fieldset>
+    </form>
+
+    <label for="encryptionPwd">Encryption Password:</label>
+    <input type="password" id="encryptionPwd" placeholder="Enter encryption password"/>
+
+    <button id="saveBtn">Save (Incomplete)</button>
+    <button id="saveSubmitBtn" disabled>Save and Submit (Complete)</button>
+    <button id="resetBtn">Reset</button>
+    <h5> Disclaimer: This form does not serve as a substitute for the Advance Incident Reporting System (AIRS) or the
+        Critical Incident Reporting (CIR) form. If applicable, please ensure that an AIRS or CIR form is also duly
+        completed.</h5>
+    <div id="step3Msg" class="error"></div>
+    <div id="step3Info" class="info"></div>
+</section>
+
+<p><a href="index.htm">Back to Home</a></p>
+
+<script>
+    // Backend base URL
+    const baseURL = 'https://api-sabhs5belq-uc.a.run.app';
+    // Elements
+    const hnInput = document.getElementById('hnInput');
+    const checkDbBtn = document.getElementById('checkDbBtn');
+    const step1Msg = document.getElementById('step1Msg');
+    const step2 = document.getElementById('step2');
+    const caseNoInput = document.getElementById('caseNoInput');
+    const addCaseBtn = document.getElementById('addCaseBtn');
+    const retrieveCaseBtn = document.getElementById('retrieveCaseBtn');
+    const step2Msg = document.getElementById('step2Msg');
+    const step3 = document.getElementById('step3');
+    const encryptionPwd = document.getElementById('encryptionPwd');
+    const saveBtn = document.getElementById('saveBtn');
+    const saveSubmitBtn = document.getElementById('saveSubmitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const step3Msg = document.getElementById('step3Msg');
+    const step3Info = document.getElementById('step3Info');
+
+    // Form elements for step3
+    const hnDisplay = document.getElementById('hnDisplay');
+    const dateOT = document.getElementById('dateOT');
+    const locationSelect = document.getElementById('location');
+    const floorSelect = document.getElementById('floor');
+    const otSelect = document.getElementById('ot');
+    const caseSeq = document.getElementById('caseSeq');
+    const bookingType = document.getElementById('bookingType');
+    const surgSpeciality = document.getElementById('surgSpeciality');
+    const signPatientBtn = document.getElementById('signPatientBtn');
+    const unsignPatientBtn = document.getElementById('unsignPatientBtn');
+
+    const asaClass = document.getElementById('asaClass');
+    const ia_cardiac_arrest = document.getElementById('ia_cardiac_arrest');
+    const med_incident = document.getElementById('med_incident');
+    const dental_injury = document.getElementById('dental_injury');
+    const severe_regurgitation = document.getElementById('severe_regurgitation');
+    const unanticipated_airway = document.getElementById('unanticipated_airway');
+    const dural_puncture = document.getElementById('dural_puncture');
+    const general_anaesthesia = document.getElementById('general_anaesthesia');
+    const postop_reintubation = document.getElementById('postop_reintubation');
+    const none_anaes = document.getElementById('none_anaes');
+    const anaesName = document.getElementById('anaesName');
+    const signAnaesBtn = document.getElementById('signAnaesBtn');
+    const unsignAnaesBtn = document.getElementById('unsignAnaesBtn');
+
+    const hypothermia = document.getElementById('hypothermia');
+    const delayed_discharge = document.getElementById('delayed_discharge');
+    const delayed_causes = document.getElementById('delayed_causes');
+    const delay_medical = document.getElementById('delay_medical');
+    const delay_anaesthetist = document.getElementById('delay_anaesthetist');
+    const delay_ward = document.getElementById('delay_ward');
+    const delay_icu = document.getElementById('delay_icu');
+    const none_pacu = document.getElementById('none_pacu');
+    const nurseName = document.getElementById('nurseName');
+    const signNurseBtn = document.getElementById('signNurseBtn');
+    const unsignNurseBtn = document.getElementById('unsignNurseBtn');
+
+    const section1 = document.querySelector('fieldset:nth-of-type(1)');
+    const section2 = document.querySelector('fieldset:nth-of-type(2)');
+    const section3 = document.querySelector('fieldset:nth-of-type(3)');
+
+    // Utility: Normalize HN input (auto uppercase prefix "HN")
+    function normalizeHN(input) {
+        input = input.trim();
+        if (/^hn/i.test(input)) {
+            input = input.replace(/^hn/i, 'HN');
+        }
+        return input.toUpperCase();
+    }
+
+    // Validate HN format: 2 uppercase letters + digits
+    function isValidHN(hn) {
+        return /^[A-Z]{2}\d+$/.test(hn);
+    }
+
+    // Validate caseNo format: digits only (number >= 0)
+    function isValidCaseNo(caseNo) {
+        return /^\d+$/.test(caseNo);
+    }
+
+    // Compose identifier: HN_caseNo (caseNo as number string)
+    function makeIdentifier(hn, caseNo) {
+        return `${hn}_${caseNo}`;
+    }
+
+    // Extract case number from identifier (e.g. "HN1234_0" -> 0)
+    function getCaseNoFromIdentifier(id) {
+        const parts = id.split('_');
+        return parseInt(parts[1], 10);
+    }
+
+    // Fetch incomplete_log and return list of IDs starting with HN
+    async function fetchIncompleteLog(hn) {
+        const res = await fetch(`${baseURL}/retrieve_specific_incomplete_log/${hn}`);
+        if (!res.ok) throw new Error('Failed to fetch incomplete log');
+        const json = await res.json();
+        return json.identifiers || [];
+    }
+
+    // Fetch complete_log and return list of IDs starting with HN
+    async function fetchCompleteLog(hn) {
+        const res = await fetch(`${baseURL}/retrieve_specific_complete_log/${hn}`);
+        if (!res.ok) throw new Error('Failed to fetch complete log');
+        const json = await res.json();
+        return json.identifiers || [];
+    }
+
+    // Fetch incomplete_data for an identifier (no auth required)
+    async function fetchIncompleteData(identifier) {
+        const res = await fetch(`${baseURL}/retrieve_specific_incomplete_data/${identifier}`);
+        if (!res.ok) {
+            if (res.status === 404) return null;
+            throw new Error('Failed to fetch incomplete data');
+        }
+        const json = await res.json();
+        return json.encrypted_content;
+    }
+
+    // Encryption / Decrypt AES using WebCrypto API (same as original)
+    async function getKeyMaterial(password) {
+        const enc = new TextEncoder();
+        return window.crypto.subtle.importKey(
+            "raw",
+            enc.encode(password),
+            {name: "PBKDF2"},
+            false,
+            ["deriveKey"]
+        );
+    }
+
+    async function deriveKey(keyMaterial, salt) {
+        return window.crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt,
+                iterations: 100000,
+                hash: "SHA-256"
+            },
+            keyMaterial,
+            {name: "AES-GCM", length: 256},
+            false,
+            ["encrypt", "decrypt"]
+        );
+    }
+
+    function str2ab(str) {
+        return new TextEncoder().encode(str);
+    }
+
+    function ab2b64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (const b of bytes) {
+            binary += String.fromCharCode(b);
+        }
+        return window.btoa(binary);
+    }
+
+    function b642ab(b64) {
+        const binary = window.atob(b64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    async function encryptAES(plaintext, password) {
+        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const keyMaterial = await getKeyMaterial(password);
+        const key = await deriveKey(keyMaterial, salt);
+        const encrypted = await window.crypto.subtle.encrypt(
+            {name: "AES-GCM", iv: iv},
+            key,
+            str2ab(plaintext)
+        );
+        const combined = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
+        combined.set(salt, 0);
+        combined.set(iv, salt.byteLength);
+        combined.set(new Uint8Array(encrypted), salt.byteLength + iv.byteLength);
+        return ab2b64(combined.buffer);
+    }
+
+    async function decryptAES(ciphertextB64, password) {
+        try {
+            const combinedBuffer = b642ab(ciphertextB64);
+            const combined = new Uint8Array(combinedBuffer);
+            const salt = combined.slice(0, 16);
+            const iv = combined.slice(16, 28);
+            const data = combined.slice(28);
+            const keyMaterial = await getKeyMaterial(password);
+            const key = await deriveKey(keyMaterial, salt);
+            const decrypted = await window.crypto.subtle.decrypt(
+                {name: "AES-GCM", iv: iv},
+                key,
+                data
+            );
+            return new TextDecoder().decode(decrypted);
+        } catch (e) {
+            throw new Error('Decryption failed');
+        }
+    }
+
+    // Reset all steps and form
+    function resetAll() {
+        // Step 1
+        hnInput.value = '';
+        hnInput.disabled = false;
+        step1Msg.textContent = '';
+        // Step 2
+        caseNoInput.value = '';
+        caseNoInput.disabled = true;
+        addCaseBtn.disabled = true;
+        retrieveCaseBtn.disabled = true;
+        step2Msg.textContent = '';
+        step2.classList.add('hidden');
+        // Step 3
+        resetStep3Form();
+        step3Msg.textContent = '';
+        step3Info.textContent = '';
+        step3.classList.add('hidden');
+        hnInput.focus();
+    }
+
+    function resetStep3Form() {
+        // Unlock and clear fields
+        hnDisplay.value = '';
+        dateOT.value = '';
+        locationSelect.value = '';
+        floorSelect.innerHTML = '<option value="">-- Select Floor --</option>';
+        floorSelect.disabled = true;
+        otSelect.innerHTML = '<option value="">-- Select OT --</option>';
+        otSelect.disabled = true;
+        caseSeq.value = '';
+        bookingType.value = '';
+        surgSpeciality.value = '';
+        signPatientBtn.disabled = false;
+        unsignPatientBtn.disabled = true;
+
+        asaClass.value = '';
+        ia_cardiac_arrest.checked = false;
+        med_incident.checked = false;
+        dental_injury.checked = false;
+        severe_regurgitation.checked = false;
+        unanticipated_airway.checked = false;
+        dural_puncture.checked = false;
+        general_anaesthesia.checked = false;
+        postop_reintubation.checked = false;
+        none_anaes.checked = false;
+        anaesName.value = '';
+        signAnaesBtn.disabled = false;
+        unsignAnaesBtn.disabled = true;
+
+        hypothermia.checked = false;
+        delayed_discharge.checked = false;
+        delayed_causes.style.display = 'none';
+        delay_medical.checked = false;
+        delay_anaesthetist.checked = false;
+        delay_ward.checked = false;
+        delay_icu.checked = false;
+        none_pacu.checked = false;
+        nurseName.value = '';
+        signNurseBtn.disabled = false;
+        unsignNurseBtn.disabled = true;
+
+        encryptionPwd.value = '';
+
+        signStatus.patient = false;
+        signStatus.anaes = false;
+        signStatus.nurse = false;
+        updateSaveSubmitBtn();
+
+        // Enable all inputs
+        unlockSection('patient');
+        unlockSection('anaes');
+        unlockSection('nurse');
+    }
+
+    // Disable Step 2 inputs/buttons
+    function disableStep2() {
+        caseNoInput.disabled = true;
+        addCaseBtn.disabled = true;
+        retrieveCaseBtn.disabled = true;
+    }
+
+    // Lock Step 2 inputs/buttons except those explicitly enabled
+    function lockStep2() {
+        hnInput.disabled = true;
+        caseNoInput.disabled = true;
+        addCaseBtn.disabled = true;
+        retrieveCaseBtn.disabled = true;
+    }
+
+    // Lock Step 3 inputs/buttons
+    function lockStep3() {
+        Array.from(document.querySelectorAll('#caseForm input, #caseForm select, #caseForm button')).forEach(e => e.disabled = true);
+        encryptionPwd.disabled = true;
+        saveBtn.disabled = true;
+        saveSubmitBtn.disabled = true;
+        resetBtn.disabled = false;
+    }
+
+    // Unlock Step 3 inputs/buttons, excluding locked by sign logic
+    function unlockStep3() {
+        // Unlock selectively depends on sign status
+        const unlockIfNotSigned = (ids, signed) => {
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !signed) el.disabled = false;
+            });
+        };
+        const allPatientFields = ['dateOT', 'location', 'floor', 'ot', 'caseSeq', 'bookingType', 'surgSpeciality', 'signPatientBtn'];
+        const allAnaesFields = ['asaClass', 'ia_cardiac_arrest', 'med_incident', 'dental_injury', 'severe_regurgitation', 'unanticipated_airway', 'dural_puncture', 'general_anaesthesia', 'postop_reintubation', 'none_anaes', 'anaesName', 'signAnaesBtn'];
+        const allNurseFields = ['hypothermia', 'delayed_discharge', 'delay_medical', 'delay_anaesthetist', 'delay_ward', 'delay_icu', 'none_pacu', 'nurseName', 'signNurseBtn'];
+
+        unlockIfNotSigned(allPatientFields, signStatus.patient);
+        unlockIfNotSigned(allAnaesFields, signStatus.anaes);
+        unlockIfNotSigned(allNurseFields, signStatus.nurse);
+
+        // Unsign buttons disabled/enabled based on sign status:
+        document.getElementById('unsignPatientBtn').disabled = !signStatus.patient;
+        document.getElementById('unsignAnaesBtn').disabled = !signStatus.anaes;
+        document.getElementById('unsignNurseBtn').disabled = !signStatus.nurse;
+
+        encryptionPwd.disabled = false;
+        saveBtn.disabled = false;
+        updateSaveSubmitBtn();
+        resetBtn.disabled = false;
+    }
+
+    // Lock or unlock individual section given sign status
+    function unlockSection(section) {
+        let ids = [];
+        switch (section) {
+            case 'patient':
+                ids = ['dateOT', 'location', 'floor', 'ot', 'caseSeq', 'bookingType', 'surgSpeciality', 'signPatientBtn', 'unsignPatientBtn'];
+                break;
+            case 'anaes':
+                ids = ['asaClass', 'ia_cardiac_arrest', 'med_incident', 'dental_injury', 'severe_regurgitation', 'unanticipated_airway', 'dural_puncture', 'general_anaesthesia', 'postop_reintubation', 'none_anaes', 'anaesName', 'signAnaesBtn', 'unsignAnaesBtn'];
+                break;
+            case 'nurse':
+                ids = ['hypothermia', 'delayed_discharge', 'delay_medical', 'delay_anaesthetist', 'delay_ward', 'delay_icu', 'none_pacu', 'nurseName', 'signNurseBtn', 'unsignNurseBtn'];
+                break;
+        }
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = false;
+        });
+    }
+
+    let clickCount = 0;
+    addCaseBtn.disabled = true;
+    retrieveCaseBtn.disabled = false;
+
+    addCaseBtn.addEventListener('click', () => {
+        clickCount++;
+        if (clickCount >= 3) {
+            addCaseBtn.disabled = false;
+            clickCount = 0;  // reset counter if needed
+        }
+    });
+
+    // Step 1 - Check Database Button click handler
+    checkDbBtn.addEventListener('click', async () => {
+        step1Msg.textContent = '';
+        step2Msg.textContent = '';
+        step3Msg.textContent = '';
+        step3Info.textContent = '';
+        step3.classList.add('hidden');
+        let hn = normalizeHN(hnInput.value);
+        if (!isValidHN(hn)) {
+            step1Msg.textContent = 'Invalid HN format. Expected like HN12345678';
+            return;
+        }
+        try {
+            const incompleteLog = await fetchIncompleteLog(hn);
+            if (incompleteLog.length > 0) {
+                // Find max case number from incompleteLog identifiers (same HN)
+                const maxCaseNo = Math.max(...incompleteLog.map(getCaseNoFromIdentifier));
+                caseNoInput.value = maxCaseNo.toString();
+                // Instead of enabling addCaseBtn directly, add a confirmation prompt
+                if (confirm('There is retrievable case, do you want to add new case?')) {
+                    addCaseBtn.disabled = false;
+                    retrieveCaseBtn.disabled = true;
+                } else {
+                    addCaseBtn.disabled = true;
+                    retrieveCaseBtn.disabled = false;
+                }
+            } else {
+                // HN not exist in incompleteLog
+                caseNoInput.value = '0';
+                alert('There is NO retrievable case, please add new case');
+                addCaseBtn.disabled = false;
+                retrieveCaseBtn.disabled = true;
+            }
+            hnInput.value = hn;
+            hnInput.disabled = true;      // Lock after check
+            caseNoInput.disabled = false; // Enable caseNo input after
+            step2.classList.remove('hidden');
+            step2Msg.textContent = '';
+        } catch (err) {
+            step1Msg.textContent = 'Failed to fetch incomplete log: ' + err.message;
+        }
+    });
+
+    // Step 2 - Add Case click handler
+    addCaseBtn.addEventListener('click', async () => {
+        step2Msg.textContent = '';
+        step3Msg.textContent = '';
+        step3Info.textContent = '';
+        step3.classList.add('hidden');
+        const hn = hnInput.value;
+        if (!isValidHN(hn)) {
+            step2Msg.textContent = 'Invalid HN.';
+            return;
+        }
+        try {
+            const [incompleteLog, completeLog] = await Promise.all([
+                fetchIncompleteLog(hn),
+                fetchCompleteLog(hn)
+            ]);
+            const allIds = incompleteLog.concat(completeLog).filter(id => id.startsWith(hn + '_'));
+            let maxCaseNo = -1;
+            if (allIds.length > 0) {
+                maxCaseNo = Math.max(...allIds.map(getCaseNoFromIdentifier));
+            }
+            const newCaseNo = maxCaseNo + 1;
+            caseNoInput.value = newCaseNo.toString();
+            hnInput.disabled = true;
+            caseNoInput.disabled = true;
+            addCaseBtn.disabled = true;
+            retrieveCaseBtn.disabled = true;
+            step3.classList.remove('hidden');
+            step3Msg.textContent = '';
+            step3Info.textContent = '';
+
+            fillStep3Defaults();
+            unlockStep3();
+        } catch (err) {
+            step2Msg.textContent = 'Failed to fetch logs: ' + err.message;
+        }
+    });
+
+    // Step 2 - Retrieve Case click handler
+    retrieveCaseBtn.addEventListener('click', async () => {
+        step2Msg.textContent = '';
+        step3Msg.textContent = '';
+        step3Info.textContent = '';
+        const hn = hnInput.value;
+        const caseNo = caseNoInput.value;
+
+        if (!isValidHN(hn) || !isValidCaseNo(caseNo)) {
+            step2Msg.textContent = 'Invalid HN or Case Number.';
+            return;
+        }
+
+        const identifier = makeIdentifier(hn, caseNo);
+        const pwd = prompt('Enter encryption password to decrypt this case:');
+        if (!pwd) {
+            step2Msg.textContent = 'Decryption password is required.';
+            return;
+        }
+
+        try {
+            const encryptedData = await fetchIncompleteData(identifier);
+            if (!encryptedData) {
+                step2Msg.textContent = 'No incomplete data found for this case.';
+                return;
+            }
+
+            let decrypted;
+            try {
+                decrypted = await decryptAES(encryptedData, pwd);
+            } catch (e) {
+                if (confirm('Wrong password or corrupted data. Overwrite existing content with new entry?')) {
+                    // Reset form but keep HN displayed
+                    resetStep3Form();
+                    hnDisplay.value = hn; // ✅ restore HN from step 1
+                    encryptionPwd.value = pwd;
+
+                    step3.classList.remove('hidden');
+                    lockStep2();
+                    unlockStep3();
+                    return;
+                } else {
+                    return;
+                }
+            }
+
+            fillCaseFormFromData(decrypted);
+            hnDisplay.value = hn;
+            encryptionPwd.value = pwd;
+
+            step3.classList.remove('hidden');
+            lockStep2();
+            unlockStep3();
+
+        } catch (err) {
+            step2Msg.textContent = 'Failed to retrieve or decrypt data: ' + err.message;
+        }
+    });
+
+
+    // --- Dependent selects for Floor and OT ---
+    const floorOptions = {
+        TMH: ['OT2', 'OT4', 'OT6', 'OT9', 'Remote'],
+        POH: ['OT2', 'Remote'],
+        TSWH: ['OT'],
+    };
+    const otOptions = {
+        TMH: {
+            OT2: ['2-1', '2-2', '2-3', '2-4', '2-5'],
+            OT4: ['4-1', '4-2', '4-3', '4-4', '4-5', '4-6', '4-7'],
+            OT6: ['6-1', '6-2', '6-3', '6-4', '6-5', '6-6', '6-7', '6-8'],
+            OT9: ['9-1', '9-2'],
+            Remote: ['RT', 'XRay7', 'XRay8', 'CCL', 'EDU', 'MRI', 'CT']
+        },
+        POH: {
+            OT2: ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8'],
+            Remote: ['CCL']
+        },
+        TSWH: {
+            OT: ['OT1', 'OT2', 'OT3', 'OT4']
+        }
+    };
+
+    locationSelect.addEventListener('change', () => {
+        const loc = locationSelect.value;
+        floorSelect.innerHTML = '<option value="">-- Select Floor --</option>';
+        otSelect.innerHTML = '<option value="">-- Select OT --</option>';
+        otSelect.disabled = true;
+
+        if (!loc) {
+            floorSelect.disabled = true;
+            return;
+        }
+        floorOptions[loc].forEach(floor => {
+            const option = document.createElement('option');
+            option.value = floor;
+            option.textContent = floor;
+            floorSelect.appendChild(option);
+        });
+        floorSelect.disabled = false;
+    });
+
+    floorSelect.addEventListener('change', () => {
+        const loc = locationSelect.value;
+        const flr = floorSelect.value;
+        otSelect.innerHTML = '<option value="">-- Select OT --</option>';
+
+        if (!flr) {
+            otSelect.disabled = true;
+            return;
+        }
+
+        const ots = otOptions[loc] && otOptions[loc][flr];
+        if (ots) {
+            ots.forEach(ot => {
+                const option = document.createElement('option');
+                option.value = ot;
+                option.textContent = ot;
+                otSelect.appendChild(option);
+            });
+            otSelect.disabled = false;
+        } else {
+            otSelect.disabled = true;
+        }
+    });
+
+    // Delayed discharge special case
+    delayed_discharge.addEventListener('change', () => {
+        delayed_causes.style.display = delayed_discharge.checked ? 'block' : 'none';
+    });
+
+    // Sign/Unsign logic
+    const signStatus = {patient: false, anaes: false, nurse: false};
+
+    function setupSignSection(signBtnId, unsignBtnId, relatedInputIds, signNameId, sectionKey) {
+        const signBtn = document.getElementById(signBtnId);
+        const unsignBtn = document.getElementById(unsignBtnId);
+        const signNameInput = signNameId ? document.getElementById(signNameId) : null;
+
+        signBtn.addEventListener('click', () => {
+            // Validation for name if required
+            if (signNameInput && !signNameInput.value.trim()) {
+                alert('Name is required to sign.');
+                return;
+            }
+            // Lock inputs and sign name input
+            relatedInputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = true;
+            });
+            if (signNameInput) signNameInput.disabled = true;
+            signBtn.disabled = true;
+            unsignBtn.disabled = false;
+            signStatus[sectionKey] = true;
+            updateSaveSubmitBtn();
+        });
+
+        unsignBtn.addEventListener('click', () => {
+            relatedInputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = false;
+            });
+            if (signNameInput) signNameInput.disabled = false;
+            signBtn.disabled = false;
+            unsignBtn.disabled = true;
+            signStatus[sectionKey] = false;
+            updateSaveSubmitBtn();
+        });
+    }
+
+    setupSignSection('signPatientBtn', 'unsignPatientBtn', [
+        'dateOT', 'location', 'floor', 'ot', 'caseSeq', 'bookingType', 'surgSpeciality'
+    ], null, 'patient');
+
+    setupSignSection('signAnaesBtn', 'unsignAnaesBtn', [
+        'asaClass', 'ia_cardiac_arrest', 'med_incident', 'dental_injury', 'severe_regurgitation',
+        'unanticipated_airway', 'dural_puncture', 'general_anaesthesia', 'postop_reintubation', 'none_anaes', 'anaesName'
+    ], 'anaesName', 'anaes');
+
+    setupSignSection('signNurseBtn', 'unsignNurseBtn', [
+        'hypothermia', 'delayed_discharge', 'delay_medical', 'delay_anaesthetist', 'delay_ward', 'delay_icu', 'none_pacu', 'nurseName'
+    ], 'nurseName', 'nurse');
+
+    function updateSaveSubmitBtn() {
+        // Enable Save & Submit only if all signed
+        saveSubmitBtn.disabled = !(signStatus.patient && signStatus.anaes && signStatus.nurse);
+
+        // If all 3 signed, disable Incomplete Save
+        if (signStatus.patient && signStatus.anaes && signStatus.nurse) {
+            saveBtn.disabled = true;
+        } else {
+            saveBtn.disabled = false;
+        }
+
+        // Progressive Section flow
+        if (signStatus.patient) {
+            section2.style.display = 'block';
+        } else {
+            section2.style.display = 'none';
+        }
+
+        if (signStatus.patient && signStatus.anaes) {
+            section3.style.display = 'block';
+        } else {
+            section3.style.display = 'none';
+        }
+    }
+
+
+    // Date default today on new case
+    function setDateToday() {
+        if (!dateOT.value) {
+            dateOT.value = new Date().toISOString().split('T')[0];
+        }
+    }
+
+    // Fill Step3 defaults on new case
+    function fillStep3Defaults() {
+        hnDisplay.value = hnInput.value || '';
+        setDateToday();
+
+        locationSelect.value = '';
+        floorSelect.innerHTML = '<option value="">-- Select Floor --</option>';
+        floorSelect.disabled = true;
+        otSelect.innerHTML = '<option value="">-- Select OT --</option>';
+        otSelect.disabled = true;
+        caseSeq.value = '';
+        bookingType.value = '';
+        surgSpeciality.value = '';
+
+        // Reset sign states
+        signStatus.patient = false;
+        signStatus.anaes = false;
+        signStatus.nurse = false;
+
+        // Reset Sign/Unsign buttons
+        unsignPatientBtn.disabled = true;
+        unsignAnaesBtn.disabled = true;
+        unsignNurseBtn.disabled = true;
+        signPatientBtn.disabled = false;
+        signAnaesBtn.disabled = false;
+        signNurseBtn.disabled = false;
+
+        // Hide advanced sections initially
+        section2.style.display = 'none';
+        section3.style.display = 'none';
+
+        updateSaveSubmitBtn();
+        unlockStep3();
+    }
+
+
+    // Load saved JSON data into form
+    function fillCaseFormFromData(decrypted) {
+        try {
+            const data = JSON.parse(decrypted);
+
+            hnDisplay.value = data.hn || hnInput.value;
+            dateOT.value = data.dateOT || '';
+            locationSelect.value = data.location || '';
+
+            // Trigger floor options population
+            locationSelect.dispatchEvent(new Event('change'));
+
+            // Wait for floor options to populate asynchronously
+            setTimeout(() => {
+                floorSelect.value = data.floor || '';
+                floorSelect.dispatchEvent(new Event('change'));
+
+                // Wait for OT options to populate asynchronously
+                setTimeout(() => {
+                    otSelect.value = data.ot || '';
+
+                    // Re-lock OT and dependent fields if patient section is signed
+                    if (data.signedPatient) {
+                        // Disable patient related fields again to ensure OT is locked
+                        ['dateOT', 'location', 'floor', 'ot', 'caseSeq', 'bookingType', 'surgSpeciality'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) el.disabled = true;
+                        });
+                        // Also disable the sign button and enable unsign button appropriately
+                        signPatientBtn.disabled = true;
+                        unsignPatientBtn.disabled = false;
+                        signStatus.patient = true;
+                        updateSaveSubmitBtn();
+                    }
+                }, 100);
+
+            }, 100);
+
+            caseSeq.value = (data.caseSeq !== undefined) ? data.caseSeq : '';
+            bookingType.value = data.bookingType || '';
+            surgSpeciality.value = data.surgSpeciality || '';
+
+            // The original sign patient click will be triggered after this fix disables fields properly
+
+            asaClass.value = data.asaClass || '';
+            ['ia_cardiac_arrest', 'med_incident', 'dental_injury', 'severe_regurgitation', 'unanticipated_airway',
+                'dural_puncture', 'general_anaesthesia', 'postop_reintubation', 'none_anaes'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!data[id];
+            });
+            anaesName.value = data.anaesName || '';
+            if (data.signedAnaes) {
+                signAnaesBtn.click();
+            } else {
+                unsignAnaesBtn.click();
+            }
+
+            ['hypothermia', 'delayed_discharge', 'delay_medical', 'delay_anaesthetist', 'delay_ward', 'delay_icu', 'none_pacu'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!data[id];
+            });
+            nurseName.value = data.nurseName || '';
+            if (data.signedNurse) {
+                signNurseBtn.click();
+            } else {
+                unsignNurseBtn.click();
+            }
+
+            delayed_causes.style.display = delayed_discharge.checked ? 'block' : 'none';
+        } catch (e) {
+            alert('Error parsing case data');
+        }
+        updateSaveSubmitBtn();
+    }
+
+
+    // Compose JSON data from form for saving
+    function composeCaseFormData() {
+        const data = {};
+        data.hn = hnDisplay.value;
+        data.dateOT = dateOT.value;
+        data.location = locationSelect.value;
+        data.floor = floorSelect.value;
+        data.ot = otSelect.value;
+        data.caseSeq = Number(caseSeq.value) || 0;
+        data.bookingType = bookingType.value;
+        data.surgSpeciality = surgSpeciality.value;
+        data.signedPatient = signStatus.patient;
+
+        data.asaClass = asaClass.value;
+        ['ia_cardiac_arrest', 'med_incident', 'dental_injury', 'severe_regurgitation', 'unanticipated_airway',
+            'dural_puncture', 'general_anaesthesia', 'postop_reintubation', 'none_anaes'].forEach(id => {
+            const el = document.getElementById(id);
+            data[id] = el ? el.checked : false;
+        });
+        data.anaesName = anaesName.value;
+        data.signedAnaes = signStatus.anaes;
+
+        ['hypothermia', 'delayed_discharge', 'delay_medical', 'delay_anaesthetist', 'delay_ward', 'delay_icu', 'none_pacu'].forEach(id => {
+            const el = document.getElementById(id);
+            data[id] = el ? el.checked : false;
+        });
+        data.nurseName = nurseName.value;
+        data.signedNurse = signStatus.nurse;
+
+        return JSON.stringify(data, null, 2);
+    }
+
+    // Save Incomplete button
+    saveBtn.addEventListener('click', async () => {
+        step3Msg.textContent = '';
+        step3Info.textContent = '';
+        const hn = hnInput.value;
+        const caseNo = caseNoInput.value;
+        const pwd = encryptionPwd.value;
+        const plaintext = composeCaseFormData();
+        if (!hn || !caseNo) {
+            step3Msg.textContent = 'HN and Case Number missing.';
+            return;
+        }
+        if (!pwd) {
+            step3Msg.textContent = 'Encryption password required.';
+            return;
+        }
+        if (!plaintext) {
+            step3Msg.textContent = 'Please enter case content.';
+            return;
+        }
+        try {
+            const encrypted = await encryptAES(plaintext, pwd);
+            const identifier = makeIdentifier(hn, caseNo);
+            const res = await fetch(`${baseURL}/write_data_incomplete`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({identifier, encrypted_content: encrypted}),
+            });
+            const json = await res.json();
+            if (!res.ok) {
+                step3Msg.textContent = 'Failed to save incomplete data: ' + json.error;
+                return;
+            }
+            step3Info.textContent = 'Incomplete data saved successfully.';
+            setTimeout(() => resetAll(), 1500);
+        } catch (err) {
+            step3Msg.textContent = 'Encryption or Save failed: ' + err.message;
+        }
+    });
+
+    // Save and Submit Complete button
+    saveSubmitBtn.addEventListener('click', async () => {
+        step3Msg.textContent = '';
+        step3Info.textContent = '';
+        const hn = hnInput.value;
+        const caseNo = caseNoInput.value;
+        const pwd = encryptionPwd.value;
+        const plaintext = composeCaseFormData();
+        if (!hn || !caseNo) {
+            step3Msg.textContent = 'HN and Case Number missing.';
+            return;
+        }
+        if (!pwd) {
+            step3Msg.textContent = 'Encryption password required.';
+            return;
+        }
+        if (!plaintext) {
+            step3Msg.textContent = 'Please enter case content.';
+            return;
+        }
+        if (!signStatus.patient || !signStatus.anaes || !signStatus.nurse) {
+            step3Msg.textContent = 'All three sections must be signed before submission.';
+            return;
+        }
+        try {
+            const encrypted = await encryptAES(plaintext, pwd);
+            const identifier = makeIdentifier(hn, caseNo);
+            const res = await fetch(`${baseURL}/write_data_complete`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({identifier, encrypted_content: encrypted}),
+            });
+            const json = await res.json();
+            if (!res.ok) {
+                step3Msg.textContent = 'Failed to save complete data: ' + json.error;
+                return;
+            }
+            step3Info.textContent = 'Complete data saved successfully.';
+            setTimeout(() => resetAll(), 1500);
+        } catch (err) {
+            step3Msg.textContent = 'Encryption or Save failed: ' + err.message;
+        }
+    });
+
+    // Reset button
+    resetBtn.addEventListener('click', () => {
+        resetAll();
+    });
+
+    // HN input normalization on input
+    hnInput.addEventListener('input', () => {
+        hnInput.value = normalizeHN(hnInput.value);
+    });
+
+    // Fill defaults on new case and after retrieve
+    // Override Add Case and Retrieve Case handlers to integrate
+    // This is done above in the respective handlers
+
+    // Initialize empty form on page load
+    resetAll();
+</script>
+</body>
+</html>

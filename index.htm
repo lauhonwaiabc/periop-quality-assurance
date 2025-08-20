@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NTWC A&OT Perioperative Quality Assurance</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<h1>NTWC A&OT Perioperative Quality Assurance</h1>
+<p>Welcome! Please choose:</p>
+
+<button class="btn" id="toInput">Fill In Periop Quality Assurance Form</button><br>
+<button class="btn" id="toOutput">Admin: Retrieve & Export Data</button>
+
+<script>
+  document.getElementById('toInput').onclick = () => {
+    window.location.href = 'InputView.htm';
+  };
+  document.getElementById('toOutput').onclick = () => {
+    window.location.href = 'OutputView.htm';
+  };
+</script>
+</body>
+</html>

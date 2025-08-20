@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Output View - Data Retrieval</title>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<h1>Output View - Retrieve Data</h1>
+<label for="adminPwdInput">Admin Password:</label>
+<input type="password" id="adminPwdInput" placeholder="Enter admin password"/>
+<label for="decryptPwdInput">Decryption Password:</label>
+<input type="password" id="decryptPwdInput" placeholder="Enter decryption password"/>
+<label for="dataSelect">Select Data Type:</label>
+<select id="dataSelect">
+    <option value="complete">Complete Data</option>
+    <option value="incomplete">Incomplete Data</option>
+    <option value="all">All Data</option>
+</select>
+<button id="retrieveDataBtn">Retrieve Data</button>
+
+<div id="msg" class="error"></div>
+<div id="info" class="info"></div>
+<div class="table-container">
+    <table id="dataTable" class="hidden" border="1">
+        <thead>
+        <tr>
+            <th>Identifier</th>
+            <th>Decryptable</th>
+            <!-- Section 1 -->
+            <th>HN</th>
+            <th>Date OT</th>
+            <th>Location</th>
+            <th>Floor</th>
+            <th>OT</th>
+            <th>Case Sequence</th>
+            <th>Booking Type</th>
+            <th>Surgical Speciality</th>
+            <th>Patient Signed</th>
+            <!-- Section 2 -->
+            <th>ASA Class</th>
+            <th>Intraop Cardiac Arrest</th>
+            <th>Medication Incident</th>
+            <th>Dental Injury</th>
+            <th>Severe Regurg/Aspiration</th>
+            <th>Unanticipated Artificial Airway</th>
+            <th>Inadvertent Dural Puncture</th>
+            <th>Unanticipated General Anaesthesia</th>
+            <th>Postop Re-intubation</th>
+            <th>None of Above Adverse Events (Anaes)</th>
+            <th>Anaes Name</th>
+            <th>Anaes Signed</th>
+            <!-- Section 3 -->
+            <th>Hypothermia PACU</th>
+            <th>Delayed Discharge &gt;2hr</th>
+            <th>Delay Cause: Medical Instability</th>
+            <th>Delay Cause: Anaesthetist</th>
+            <th>Delay Cause: Ward</th>
+            <th>Delay Cause: ICU</th>
+            <th>None of Above Adverse Events (PACU)</th>
+            <th>Nurse Name</th>
+            <th>Nurse Signed</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+<div id="tableControls" class="hidden">
+    <button id="exportExcelBtn">Export as CSV</button>
+    <button id="deleteSelectedBtn">Delete Displayed Data</button>
+    <button id="clearDatabaseBtn">Clear Entire Database</button>
+</div>
+
+<p><a href="index.htm">Back to Home</a></p>
+
+<script>
+    const baseURL = 'https://api-sabhs5belq-uc.a.run.app';
+    const adminPwdInput = document.getElementById('adminPwdInput');
+    const decryptPwdInput = document.getElementById('decryptPwdInput');
+    const dataSelect = document.getElementById('dataSelect');
+    const retrieveDataBtn = document.getElementById('retrieveDataBtn');
+    const msgEl = document.getElementById('msg');
+    const infoEl = document.getElementById('info');
+    const dataTable = document.getElementById('dataTable');
+    const tbody = dataTable.querySelector('tbody');
+    const tableControls = document.getElementById('tableControls');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
+
+    let jwtToken = null;
+    let allData = []; // { identifier, encrypted_content, decrypted (json or null), decryptable (bool), type }
+
+    async function getKeyMaterial(password) {
+        const enc = new TextEncoder();
+        return window.crypto.subtle.importKey("raw", enc.encode(password), {name: "PBKDF2"}, false, ["deriveKey"]);
+    }
+
+    async function deriveKey(keyMaterial, salt) {
+        return window.crypto.subtle.deriveKey(
+            {name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256"},
+            keyMaterial,
+            {name: "AES-GCM", length: 256},
+            false,
+            ["decrypt"]
+        );
+    }
+
+    function b642ab(b64) {
+        const binary = window.atob(b64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    async function decryptAES(ciphertextB64, password) {
+        const combinedBuffer = b642ab(ciphertextB64);
+        const combined = new Uint8Array(combinedBuffer);
+        const salt = combined.slice(0, 16);
+        const iv = combined.slice(16, 28);
+        const data = combined.slice(28);
+        const keyMaterial = await getKeyMaterial(password);
+        const key = await deriveKey(keyMaterial, salt);
+        const decrypted = await window.crypto.subtle.decrypt({name: "AES-GCM", iv: iv}, key, data);
+        return new TextDecoder().decode(decrypted);
+    }
+
+    function clearTable() {
+        tbody.innerHTML = '';
+        dataTable.classList.add('hidden');
+        tableControls.classList.add('hidden');
+        msgEl.textContent = '';
+        infoEl.textContent = '';
+        allData = [];
+    }
+
+    // Render table with detailed columns and decrypt status row per record
+    async function renderTable(dataItems, decryptPwd) {
+        clearTable();
+        if (!dataItems.length) {
+            msgEl.textContent = 'No data to display.';
+            return;
+        }
+        dataTable.classList.remove('hidden');
+        tableControls.classList.remove('hidden');
+
+        for (const item of dataItems) {
+            const tr = document.createElement('tr');
+
+            // Attempt decrypt and parse JSON form
+            let decryptedContent = null;
+            let decryptable = false;
+            try {
+                if (item.encrypted_content) {
+                    const decryptedText = await decryptAES(item.encrypted_content, decryptPwd);
+                    decryptedContent = JSON.parse(decryptedText);
+                    decryptable = true;
+                    item.decrypted = decryptedContent;
+                    item.decryptable = true;
+                } else {
+                    item.decrypted = null;
+                    item.decryptable = false;
+                }
+            } catch {
+                item.decrypted = null;
+                item.decryptable = false;
+            }
+
+            // Identifier Column
+            const idTd = document.createElement('td');
+            idTd.textContent = item.identifier;
+            tr.appendChild(idTd);
+
+            // Decryptable Column
+            const decTd = document.createElement('td');
+            decTd.textContent = decryptable ? 'Yes' : 'No';
+            tr.appendChild(decTd);
+
+            function boolToYesNo(val) {
+                return val ? 'Yes' : 'No';
+            }
+
+            // Helper get safe field or ''
+            const g = (field) => (decryptable && decryptedContent && decryptedContent[field] !== undefined) ? decryptedContent[field] : '';
+
+            // Section 1 Fields
+            const hnTd = document.createElement('td');
+            hnTd.textContent = g('hn');
+            tr.appendChild(hnTd);
+            const dateOTTd = document.createElement('td');
+            dateOTTd.textContent = g('dateOT');
+            tr.appendChild(dateOTTd);
+            const locationTd = document.createElement('td');
+            locationTd.textContent = g('location');
+            tr.appendChild(locationTd);
+            const floorTd = document.createElement('td');
+            floorTd.textContent = g('floor');
+            tr.appendChild(floorTd);
+            const otTd = document.createElement('td');
+            otTd.textContent = g('ot');
+            tr.appendChild(otTd);
+            const caseSeqTd = document.createElement('td');
+            caseSeqTd.textContent = (g('caseSeq') !== '') ? g('caseSeq') : '';
+            tr.appendChild(caseSeqTd);
+            const bookingTypeTd = document.createElement('td');
+            bookingTypeTd.textContent = g('bookingType');
+            tr.appendChild(bookingTypeTd);
+            const surgSpecialityTd = document.createElement('td');
+            surgSpecialityTd.textContent = g('surgSpeciality');
+            tr.appendChild(surgSpecialityTd);
+            const patientSignedTd = document.createElement('td');
+            patientSignedTd.textContent = boolToYesNo(g('signedPatient'));
+            tr.appendChild(patientSignedTd);
+
+            // Section 2 Fields
+            const asaClassTd = document.createElement('td');
+            asaClassTd.textContent = g('asaClass');
+            tr.appendChild(asaClassTd);
+            const ia_cardiac_arrestTd = document.createElement('td');
+            ia_cardiac_arrestTd.textContent = boolToYesNo(g('ia_cardiac_arrest'));
+            tr.appendChild(ia_cardiac_arrestTd);
+            const med_incidentTd = document.createElement('td');
+            med_incidentTd.textContent = boolToYesNo(g('med_incident'));
+            tr.appendChild(med_incidentTd);
+            const dental_injuryTd = document.createElement('td');
+            dental_injuryTd.textContent = boolToYesNo(g('dental_injury'));
+            tr.appendChild(dental_injuryTd);
+            const severe_regurgitationTd = document.createElement('td');
+            severe_regurgitationTd.textContent = boolToYesNo(g('severe_regurgitation'));
+            tr.appendChild(severe_regurgitationTd);
+            const unanticipated_airwayTd = document.createElement('td');
+            unanticipated_airwayTd.textContent = boolToYesNo(g('unanticipated_airway'));
+            tr.appendChild(unanticipated_airwayTd);
+            const dural_punctureTd = document.createElement('td');
+            dural_punctureTd.textContent = boolToYesNo(g('dural_puncture'));
+            tr.appendChild(dural_punctureTd);
+            const general_anaesthesiaTd = document.createElement('td');
+            general_anaesthesiaTd.textContent = boolToYesNo(g('general_anaesthesia'));
+            tr.appendChild(general_anaesthesiaTd);
+            const postop_reintubationTd = document.createElement('td');
+            postop_reintubationTd.textContent = boolToYesNo(g('postop_reintubation'));
+            tr.appendChild(postop_reintubationTd);
+            const none_anaesTd = document.createElement('td');
+            none_anaesTd.textContent = boolToYesNo(g('none_anaes'));
+            tr.appendChild(none_anaesTd);
+            const anaesNameTd = document.createElement('td');
+            anaesNameTd.textContent = g('anaesName');
+            tr.appendChild(anaesNameTd);
+            const anaesSignedTd = document.createElement('td');
+            anaesSignedTd.textContent = boolToYesNo(g('signedAnaes'));
+            tr.appendChild(anaesSignedTd);
+
+            // Section 3 Fields
+            const hypothermiaTd = document.createElement('td');
+            hypothermiaTd.textContent = boolToYesNo(g('hypothermia'));
+            tr.appendChild(hypothermiaTd);
+            const delayed_dischargeTd = document.createElement('td');
+            delayed_dischargeTd.textContent = boolToYesNo(g('delayed_discharge'));
+            tr.appendChild(delayed_dischargeTd);
+            const delay_medicalTd = document.createElement('td');
+            delay_medicalTd.textContent = boolToYesNo(g('delay_medical'));
+            tr.appendChild(delay_medicalTd);
+            const delay_anaesthetistTd = document.createElement('td');
+            delay_anaesthetistTd.textContent = boolToYesNo(g('delay_anaesthetist'));
+            tr.appendChild(delay_anaesthetistTd);
+            const delay_wardTd = document.createElement('td');
+            delay_wardTd.textContent = boolToYesNo(g('delay_ward'));
+            tr.appendChild(delay_wardTd);
+            const delay_icuTd = document.createElement('td');
+            delay_icuTd.textContent = boolToYesNo(g('delay_icu'));
+            tr.appendChild(delay_icuTd);
+            const none_pacuTd = document.createElement('td');
+            none_pacuTd.textContent = boolToYesNo(g('none_pacu'));
+            tr.appendChild(none_pacuTd);
+            const nurseNameTd = document.createElement('td');
+            nurseNameTd.textContent = g('nurseName');
+            tr.appendChild(nurseNameTd);
+            const nurseSignedTd = document.createElement('td');
+            nurseSignedTd.textContent = boolToYesNo(g('signedNurse'));
+            tr.appendChild(nurseSignedTd);
+
+            // Action (Delete button)
+            const actionTd = document.createElement('td');
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'Delete Data';
+            delBtn.style.whiteSpace = 'nowrap';
+            delBtn.addEventListener('click', () => deleteSingleData(item.identifier, item.type));
+            actionTd.appendChild(delBtn);
+            tr.appendChild(actionTd);
+
+            tbody.appendChild(tr);
+        }
+        allData = dataItems;
+    }
+
+    async function adminLogin(password) {
+        const res = await fetch(`${baseURL}/admin/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password})
+        });
+        if (!res.ok) {
+            const json = await res.json().catch(() => ({}));
+            throw new Error(json.error || 'Admin login failed');
+        }
+        const json = await res.json();
+        return json.token;
+    }
+
+    async function fetchCompleteData(token) {
+        const res = await fetch(`${baseURL}/retrieve_all_complete_data`, {
+            headers: {Authorization: `Bearer ${token}`}
+        });
+        if (!res.ok) {
+            const json = await res.json().catch(() => ({}));
+            throw new Error(json.error || 'Failed to fetch complete data');
+        }
+        const json = await res.json();
+        return json.data || {};
+    }
+
+    async function fetchIncompleteDataAll() {
+        const res = await fetch(`${baseURL}/retrieve_all_incomplete_data`);
+        if (!res.ok) {
+            const json = await res.json().catch(() => ({}));
+            throw new Error(json.error || 'Failed to fetch incomplete data');
+        }
+        const json = await res.json();
+        return json.data || {};
+    }
+
+    async function deleteSingleData(identifier, type) {
+        if (!jwtToken) {
+            msgEl.textContent = 'Must login with admin password before deleting.';
+            return;
+        }
+        if (!confirm(`Delete data for identifier "${identifier}" from ${type} database?`)) {
+            return;
+        }
+        let url = '';
+        if (type === 'complete') {
+            url = `${baseURL}/remove_specific_complete_data/${identifier}`;
+        } else if (type === 'incomplete') {
+            url = `${baseURL}/remove_specific_incomplete_data/${identifier}`;
+        } else {
+            msgEl.textContent = 'Unknown data type for deletion.';
+            return;
+        }
+        try {
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: {Authorization: `Bearer ${jwtToken}`}
+            });
+            const json = await res.json();
+            if (!res.ok) {
+                msgEl.textContent = `Delete failed: ${json.error || 'Unknown error'}`;
+            } else {
+                msgEl.textContent = 'Delete successful.';
+                // Remove from table data array and rerender
+                const idx = allData.findIndex(item => item.identifier === identifier && item.type === type);
+                if (idx !== -1) {
+                    allData.splice(idx, 1);
+                    await renderTable(allData, decryptPwdInput.value);
+                }
+            }
+        } catch (e) {
+            msgEl.textContent = 'Delete request failed: ' + e.message;
+        }
+    }
+
+    async function clearEntireDatabase() {
+        if (!jwtToken) {
+            msgEl.textContent = 'Must login with admin password before clearing database.';
+            return;
+        }
+        if (!confirm('Are you sure you want to clear the entire selected database? This cannot be undone.')) {
+            return;
+        }
+        try {
+            let url = '';
+            const sel = dataSelect.value;
+            if (sel === 'complete') {
+                url = `${baseURL}/clear_database_complete`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {Authorization: `Bearer ${jwtToken}`}
+                });
+                const json = await res.json();
+                if (!res.ok) {
+                    msgEl.textContent = `Clear failed: ${json.error || 'Unknown error'}`;
+                } else {
+                    infoEl.textContent = 'Complete database cleared successfully.';
+                    clearTable();
+                }
+            } else if (sel === 'incomplete') {
+                url = `${baseURL}/clear_database_incomplete`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {Authorization: `Bearer ${jwtToken}`}
+                });
+                const json = await res.json();
+                if (!res.ok) {
+                    msgEl.textContent = `Clear failed: ${json.error || 'Unknown error'}`;
+                } else {
+                    infoEl.textContent = 'Incomplete database cleared successfully.';
+                    clearTable();
+                }
+            } else if (sel === 'all') {
+                await fetch(`${baseURL}/clear_database_complete`, {
+                    method: 'POST',
+                    headers: {Authorization: `Bearer ${jwtToken}`}
+                });
+                await fetch(`${baseURL}/clear_database_incomplete`, {
+                    method: 'POST',
+                    headers: {Authorization: `Bearer ${jwtToken}`}
+                });
+                clearTable();
+                infoEl.textContent = 'Both complete and incomplete databases cleared.';
+                msgEl.textContent = '';
+            } else {
+                msgEl.textContent = 'Unknown selection for clearing database.';
+            }
+        } catch (e) {
+            msgEl.textContent = 'Clear database request failed: ' + e.message;
+        }
+    }
+
+    function exportTableToCSV(filename) {
+        if (allData.length === 0) {
+            msgEl.textContent = 'No data to export.';
+            return;
+        }
+        const headers = [
+            "Identifier", "Decryptable",
+            "HN", "Date OT", "Location", "Floor", "OT", "Case Sequence", "Booking Type", "Surgical Speciality", "Patient Signed",
+            "ASA Class", "Intraop Cardiac Arrest", "Medication Incident", "Dental Injury", "Severe Regurg/Aspiration",
+            "Unanticipated Artificial Airway", "Inadvertent Dural Puncture", "Unanticipated General Anaesthesia",
+            "Postop Re-intubation", "None of Above Adverse Events (Anaes)", "Anaes Name", "Anaes Signed",
+            "Hypothermia PACU", "Delayed Discharge >2hr", "Delay Cause: Medical Instability", "Delay Cause: Anaesthetist",
+            "Delay Cause: Ward", "Delay Cause: ICU", "None of Above Adverse Events (PACU)", "Nurse Name", "Nurse Signed"
+        ];
+        const rows = [headers];
+
+        function boolToYesNo(val) {
+            return val ? "Yes" : "No";
+        }
+
+        for (const item of allData) {
+            const d = item.decrypted || {};
+            const decryptable = item.decryptable ? "Yes" : "No";
+
+            function g(field) {
+                return item.decryptable && d[field] !== undefined ? d[field] : "";
+            }
+
+            rows.push([
+                item.identifier,
+                decryptable,
+                g('hn'),
+                g('dateOT'),
+                g('location'),
+                g('floor'),
+                g('ot'),
+                g('caseSeq'),
+                g('bookingType'),
+                g('surgSpeciality'),
+                boolToYesNo(g('signedPatient')),
+
+                g('asaClass'),
+                boolToYesNo(g('ia_cardiac_arrest')),
+                boolToYesNo(g('med_incident')),
+                boolToYesNo(g('dental_injury')),
+                boolToYesNo(g('severe_regurgitation')),
+                boolToYesNo(g('unanticipated_airway')),
+                boolToYesNo(g('dural_puncture')),
+                boolToYesNo(g('general_anaesthesia')),
+                boolToYesNo(g('postop_reintubation')),
+                boolToYesNo(g('none_anaes')),
+                g('anaesName'),
+                boolToYesNo(g('signedAnaes')),
+
+                boolToYesNo(g('hypothermia')),
+                boolToYesNo(g('delayed_discharge')),
+                boolToYesNo(g('delay_medical')),
+                boolToYesNo(g('delay_anaesthetist')),
+                boolToYesNo(g('delay_ward')),
+                boolToYesNo(g('delay_icu')),
+                boolToYesNo(g('none_pacu')),
+                g('nurseName'),
+                boolToYesNo(g('signedNurse'))
+            ]);
+        }
+
+        // Escape fields for CSV (double quotes around text fields and escape quotes inside)
+        const csvContent = rows.map(row => row.map(field => {
+            if (typeof field === 'string' && (field.includes(',') || field.includes('\n') || field.includes('"'))) {
+                return `"${field.replace(/"/g, '""')}"`;
+            } else {
+                return field;
+            }
+        }).join(',')).join('\r\n');
+
+        const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    retrieveDataBtn.addEventListener('click', async () => {
+        clearTable();
+        msgEl.textContent = '';
+        infoEl.textContent = '';
+        const adminPwd = adminPwdInput.value.trim();
+        const decryptPwd = decryptPwdInput.value;
+        if (!adminPwd) {
+            msgEl.textContent = 'Admin password is required.';
+            return;
+        }
+        if (!decryptPwd) {
+            msgEl.textContent = 'Decryption password is required.';
+            return;
+        }
+        const selection = dataSelect.value;
+
+        try {
+            jwtToken = await adminLogin(adminPwd);
+        } catch (e) {
+            msgEl.textContent = 'Admin login failed: ' + e.message;
+            jwtToken = null;
+            return;
+        }
+
+        try {
+            let combinedData = [];
+            if (selection === 'complete' || selection === 'all') {
+                const completeData = await fetchCompleteData(jwtToken);
+                for (const [id, encContent] of Object.entries(completeData)) {
+                    combinedData.push({identifier: id, encrypted_content: encContent, type: 'complete'});
+                }
+            }
+            if (selection === 'incomplete' || selection === 'all') {
+                const incompleteData = await fetchIncompleteDataAll();
+                for (const [id, encContent] of Object.entries(incompleteData)) {
+                    combinedData.push({identifier: id, encrypted_content: encContent, type: 'incomplete'});
+                }
+            }
+            if (combinedData.length === 0) {
+                msgEl.textContent = 'No data found for selected type.';
+                return;
+            }
+            await renderTable(combinedData, decryptPwd);
+        } catch (e) {
+            msgEl.textContent = 'Data retrieval failed: ' + e.message;
+        }
+    });
+
+    exportExcelBtn.addEventListener('click', () => {
+        exportTableToCSV('exported_data.csv');
+    });
+
+    deleteSelectedBtn.addEventListener('click', async () => {
+        if (!jwtToken) {
+            msgEl.textContent = 'Admin login required for deletion.';
+            return;
+        }
+        if (!allData.length) {
+            msgEl.textContent = 'No data to delete.';
+            return;
+        }
+        if (!confirm(`Delete ALL displayed ${allData.length} data entries? This cannot be undone.`)) {
+            return;
+        }
+        msgEl.textContent = '';
+        infoEl.textContent = 'Deleting... please wait.';
+        // Sequential deletes
+        for (const item of [...allData]) {
+            try {
+                await deleteSingleData(item.identifier, item.type);
+            } catch (e) {
+                msgEl.textContent = 'Some deletes failed: ' + e.message;
+                infoEl.textContent = '';
+            }
+        }
+        infoEl.textContent = 'Delete all operation completed.';
+    });
+
+    clearDatabaseBtn.addEventListener('click', clearEntireDatabase);
+
+</script>
+</body>
+</html>
