@@ -4,6 +4,26 @@
     <meta charset="UTF-8"/>
     <title>NTWC A&OT Perioperative Quality Assurance</title>
     <link rel="stylesheet" href="style.css"/>
+    <style>
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        dialog {
+            border-radius: 8px;
+            border: 2px solid #008;
+            padding: 1.5em 2em;
+            min-width: 240px;
+            max-width: 350px;
+            font-family: inherit;
+        }
+
+        dialog menu {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1em;
+        }
+    </style>
 </head>
 <body>
 <h1>NTWC A&OT Perioperative Quality Assurance</h1>
@@ -168,6 +188,35 @@
 
 <p><a href="index.htm">Back to Home</a></p>
 
+<!-- Dialog: Add/Retrieve Case -->
+<dialog id="retrievableDialog">
+    <form method="dialog">
+        <p>There is retrievable case(s).<br/>
+            <span style="font-size:smaller;color:#555;">
+        Choose an option below.<br/>
+      </span>
+        </p>
+        <menu>
+            <button value="add">Add New Case</button>
+            <button value="retrieve">Retrieve Case</button>
+        </menu>
+    </form>
+</dialog>
+
+
+<!-- Dialog: Incorrect Password -->
+<dialog id="incorrectPwdDialog">
+    <form method="dialog">
+        <p>Wrong password or corrupted data.<br/>
+    </span>
+        </p>
+        <menu>
+            <button value="overwrite">Overwrite Content</button>
+            <button value="retry">Retry</button>
+        </menu>
+    </form>
+</dialog>
+
 <script>
     // Backend base URL
     const baseURL = 'https://api-sabhs5belq-uc.a.run.app';
@@ -312,6 +361,16 @@
             false,
             ["encrypt", "decrypt"]
         );
+    }
+
+    async function showDialog(dialog) {
+        return new Promise(resolve => {
+            dialog.addEventListener('close', function handler() {
+                dialog.removeEventListener('close', handler);
+                resolve(dialog.returnValue);
+            });
+            dialog.showModal();
+        });
     }
 
     function str2ab(str) {
@@ -548,11 +607,11 @@
         try {
             const incompleteLog = await fetchIncompleteLog(hn);
             if (incompleteLog.length > 0) {
-                // Find max case number from incompleteLog identifiers (same HN)
                 const maxCaseNo = Math.max(...incompleteLog.map(getCaseNoFromIdentifier));
                 caseNoInput.value = maxCaseNo.toString();
-                // Instead of enabling addCaseBtn directly, add a confirmation prompt
-                if (confirm('There is retrievable case(s), do you want to add new case? (OK = Add New Case; Cancel = Retrieve Case)')) {
+                // Custom dialog instead of confirm
+                const choice = await showDialog(retrievableDialog);
+                if (choice === 'add') {
                     addCaseBtn.disabled = false;
                     retrieveCaseBtn.disabled = true;
                 } else {
@@ -560,15 +619,14 @@
                     retrieveCaseBtn.disabled = false;
                 }
             } else {
-                // HN not exist in incompleteLog
                 caseNoInput.value = '0';
                 alert('There is NO retrievable case, please add new case');
                 addCaseBtn.disabled = false;
                 retrieveCaseBtn.disabled = true;
             }
             hnInput.value = hn;
-            hnInput.disabled = true;      // Lock after check
-            caseNoInput.disabled = false; // Enable caseNo input after
+            hnInput.disabled = true;
+            caseNoInput.disabled = false;
             step2.classList.remove('hidden');
             step2Msg.textContent = '';
         } catch (err) {
@@ -645,18 +703,18 @@
             try {
                 decrypted = await decryptAES(encryptedData, pwd);
             } catch (e) {
-                if (confirm('Wrong password or corrupted data. Overwrite existing content with new entry? (OK = Overwrite, Cancel = Retry)')) {
-                    // Reset form but keep HN displayed
+                // Custom dialog for incorrect password
+                const choice = await showDialog(incorrectPwdDialog);
+                if (choice === 'overwrite') {
                     resetStep3Form();
-                    hnDisplay.value = hn; // ✅ restore HN from step 1
+                    hnDisplay.value = hn;
                     encryptionPwd.value = pwd;
-
                     step3.classList.remove('hidden');
                     lockStep2();
                     unlockStep3();
                     return;
                 } else {
-                    return;
+                    return; // Retry: do nothing
                 }
             }
 
