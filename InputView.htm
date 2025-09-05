@@ -552,7 +552,7 @@
                 const maxCaseNo = Math.max(...incompleteLog.map(getCaseNoFromIdentifier));
                 caseNoInput.value = maxCaseNo.toString();
                 // Instead of enabling addCaseBtn directly, add a confirmation prompt
-                if (confirm('There is retrievable case, do you want to add new case?')) {
+                if (confirm('There is retrievable case(s), do you want to add new case? (OK = Add New Case; Cancel = Retrieve Case)')) {
                     addCaseBtn.disabled = false;
                     retrieveCaseBtn.disabled = true;
                 } else {
@@ -645,7 +645,7 @@
             try {
                 decrypted = await decryptAES(encryptedData, pwd);
             } catch (e) {
-                if (confirm('Wrong password or corrupted data. Overwrite existing content with new entry?')) {
+                if (confirm('Wrong password or corrupted data. Overwrite existing content with new entry? (OK = Overwrite, Cancel = Retry)')) {
                     // Reset form but keep HN displayed
                     resetStep3Form();
                     hnDisplay.value = hn; // ✅ restore HN from step 1
